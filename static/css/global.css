@@ -1,0 +1,25 @@
+
+.admonition-title { 
+    margin-bottom: 0px !important
+}
+
+:root {
+    --marvin-blue: rgba(24, 21, 68);
+    --md-primary-fg-color: var(--marvin-blue);
+  }
+
+article a {
+    text-decoration: underline !important;
+}
+
+p {
+    margin-bottom: 15px;
+}
+
+h2 {
+    margin-top: 16px !important;
+}
+
+h1 {
+    margin-bottom: 15px !important
+}
