@@ -45,7 +45,7 @@ def ChatCompletion(
 ) -> AbstractChatCompletion[T]:  # type: ignore
     provider, model = parse_model_shortcut(model)
     if provider == "openai" or provider == "azure_openai":
-        from .providers.openai import OpenAIChatCompletion
+        from .providers import OpenAIChatCompletion
 
         return OpenAIChatCompletion(provider=provider, model=model, **kwargs)
     if provider == "anthropic":

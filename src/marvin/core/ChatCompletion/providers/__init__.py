@@ -7,7 +7,6 @@ from marvin.types import Function
 from marvin.utilities.async_utils import create_task, run_sync
 from marvin.utilities.messages import Message
 from marvin.utilities.streaming import StreamHandler
-from openai.openai_object import OpenAIObject
 
 from ..abstract import AbstractChatCompletion
 from ..handlers import Request, Response, Usage
@@ -60,8 +59,8 @@ def serialize_function_or_callable(
 class OpenAIStreamHandler(StreamHandler):
     async def handle_streaming_response(
         self,
-        api_response: AsyncGenerator[OpenAIObject, None],
-    ) -> OpenAIObject:
+        api_response: AsyncGenerator["Completion", None],
+    ) -> "Completion":
         final_chunk = {}
         accumulated_content = ""
 
@@ -90,7 +89,7 @@ class OpenAIStreamHandler(StreamHandler):
 
         final_chunk["object"] = "chat.completion"
 
-        return OpenAIObject.construct_from(
+        return Completion.model_validate(
             {
                 "id": final_chunk["id"],
                 "object": "chat.completion",
@@ -207,8 +206,8 @@ class OpenAIChatCompletion(AbstractChatCompletion[T]):
 
         if handler_fn := serialized_request.pop("stream_handler", {}):
             serialized_request["stream"] = True
-
-        response = await openai.ChatCompletion.acreate(**serialized_request)  # type: ignore # noqa
+        client = openai.AsyncOpenAI()
+        response = await client.chat.completions.create(**serialized_request)  # type: ignore # noqa
 
         if handler_fn:
             response = await OpenAIStreamHandler(

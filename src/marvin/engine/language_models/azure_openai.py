@@ -1,6 +1,6 @@
 import marvin
 
-from .openai import OpenAIChatLLM
+from .open_ai import OpenAIChatLLM
 
 CONTEXT_SIZES = {
     "gpt-35-turbo": 4096,

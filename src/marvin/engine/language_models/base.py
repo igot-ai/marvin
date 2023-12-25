@@ -125,7 +125,7 @@ def chat_llm(model: str = None, **kwargs) -> ChatLLM:
     provider, model_name = model.split("/", 1)
 
     if provider == "openai":
-        from .openai import OpenAIChatLLM
+        from .open_ai import OpenAIChatLLM
 
         return OpenAIChatLLM(model=model_name, **kwargs)
     elif provider == "anthropic":
