@@ -1,10 +1,11 @@
 from logging import Logger
 from typing import Callable, Union
 
+from litellm import acompletion
+
 from marvin.engine.language_models import OpenAIFunction
 from marvin.engine.language_models.open_ai import OpenAIStreamHandler, OpenAIChatLLM
 from marvin.utilities.messages import Message, Role
-from litellm import acompletion
 
 
 class LiteLLM(OpenAIChatLLM):
