@@ -109,8 +109,6 @@ class AzureOpenAI(MarvinBaseSettings):
             response["api_key"] = os.environ["MARVIN_AZURE_OPENAI_API_KEY"]
         if openai.api_key:
             response["api_key"] = openai.api_key
-        if marvin_openai.api_key:
-            response["api_key"] = marvin_openai.api_key
 
         return model_dump(self, exclude_unset=True) | {
             k: v for k, v in response.items() if v is not None
