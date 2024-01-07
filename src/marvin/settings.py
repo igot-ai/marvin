@@ -52,10 +52,6 @@ class OpenAISettings(MarvinBaseSettings):
             response["api_key"] = os.environ["MARVIN_OPENAI_API_KEY"]
         if os.environ.get("OPENAI_API_KEY"):
             response["api_key"] = os.environ["OPENAI_API_KEY"]
-        if openai.api_key:
-            response["api_key"] = openai.api_key
-        if marvin_openai.api_key:
-            response["api_key"] = marvin_openai.api_key
         response["temperature"] = settings.llm_temperature
         response["request_timeout"] = settings.llm_request_timeout_seconds
         return {
@@ -113,8 +109,6 @@ class AzureOpenAI(MarvinBaseSettings):
             response["api_key"] = os.environ["MARVIN_AZURE_OPENAI_API_KEY"]
         if openai.api_key:
             response["api_key"] = openai.api_key
-        if marvin_openai.api_key:
-            response["api_key"] = marvin_openai.api_key
 
         return model_dump(self, exclude_unset=True) | {
             k: v for k, v in response.items() if v is not None

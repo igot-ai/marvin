@@ -2,8 +2,7 @@ import inspect
 from logging import Logger
 from typing import Callable, Optional, Union
 
-import openai
-import openai.openai_object
+from marvin.engine.client import AsyncOpenAI as OpenAI
 
 import marvin
 import marvin.utilities.types
@@ -11,7 +10,7 @@ from marvin.utilities.async_utils import create_task
 from marvin.utilities.logging import get_logger
 from marvin.utilities.messages import Message, Role
 
-from .base import ChatLLM, OpenAIFunction, StreamHandler
+from marvin.engine.language_models.base import ChatLLM, OpenAIFunction, StreamHandler
 
 CONTEXT_SIZES = {
     "gpt-3.5-turbo-16k-0613": 16384,
@@ -36,8 +35,8 @@ def openai_role_map(marvin_role: Role) -> str:
 
 class OpenAIStreamHandler(StreamHandler):
     async def handle_streaming_response(
-        self,
-        api_response: openai.openai_object.OpenAIObject,
+            self,
+            api_response: "openai.types.completion.Completion",
     ) -> Message:
         """
         Accumulate chunk deltas into a full response. Returns the full message.
@@ -46,27 +45,31 @@ class OpenAIStreamHandler(StreamHandler):
         response = {"role": None, "content": "", "data": {}, "llm_response": None}
 
         async for r in api_response:
-            response["llm_response"] = r.to_dict_recursive()
+            response["llm_response"] = r.dict()
 
             delta = r.choices[0].delta if r.choices and r.choices[0] else None
 
             if delta is None:
                 continue
 
-            if "role" in delta:
+            if delta.role is not None:
                 response["role"] = delta.role
 
-            if fn_call := delta.get("function_call"):
-                if "function_call" not in response["data"]:
-                    response["data"]["function_call"] = {"name": None, "arguments": ""}
-                if "name" in fn_call:
-                    response["data"]["function_call"]["name"] = fn_call.name
-                if "arguments" in fn_call:
-                    response["data"]["function_call"]["arguments"] += (
-                        fn_call.arguments or ""
-                    )
+            if delta is not None and hasattr(delta, 'tool_calls'):
+                try:
+                    if fn_call := delta.tool_calls:
+                        if "tool_calls" not in response["data"]:
+                            response["data"]["function_call"] = {"name": None, "arguments": ""}
+                        if "name" in fn_call:
+                            response["data"]["function_call"]["name"] = fn_call.name
+                        if "arguments" in fn_call:
+                            response["data"]["function_call"]["arguments"] += (
+                                fn_call.arguments or ""
+                            )
+                except Exception as e:
+                    continue
 
-            if "content" in delta:
+            if delta.content is not None:
                 response["content"] += delta.content or ""
 
             if self.callback:
@@ -111,7 +114,7 @@ class OpenAIChatLLM(ChatLLM):
         return openai_kwargs
 
     def format_messages(
-        self, messages: list[Message]
+            self, messages: list[Message]
     ) -> Union[str, dict, list[Union[str, dict]]]:
         """Format Marvin message objects into a prompt compatible with the LLM model"""
         formatted_messages = []
@@ -172,12 +175,13 @@ class OpenAIChatLLM(ChatLLM):
 
         kwargs.setdefault("temperature", self.temperature)
         kwargs.setdefault("max_tokens", self.max_tokens)
-
-        response = await openai.ChatCompletion.acreate(
+        client = OpenAI(api_key=kwargs['api_key'])
+        del kwargs['api_key']
+        response = await client.chat.completions.create(
             model=self.model,
             messages=prompt,
             stream=True if stream_handler else False,
-            request_timeout=marvin.settings.llm_request_timeout_seconds,
+            timeout=marvin.settings.llm_request_timeout_seconds,
             **kwargs,
         )
 
@@ -187,7 +191,7 @@ class OpenAIChatLLM(ChatLLM):
             role = msg.role
 
             if role == Role.ASSISTANT and isinstance(
-                msg.data.get("function_call"), dict
+                    msg.data.get("function_call"), dict
             ):
                 role = Role.FUNCTION_REQUEST
 
@@ -199,7 +203,7 @@ class OpenAIChatLLM(ChatLLM):
             )
 
         else:
-            llm_response = response.to_dict_recursive()
+            llm_response = response.model_dump()
             msg = llm_response["choices"][0]["message"].copy()
             role = msg.pop("role").upper()
             if role == "ASSISTANT" and isinstance(msg.get("function_call"), dict):
@@ -211,3 +215,22 @@ class OpenAIChatLLM(ChatLLM):
                 llm_response=llm_response,
             )
             return msg
+
+#
+# async def main():
+#     llm = OpenAIChatLLM(model="gpt-3.5-turbo")
+#     from marvin.prompts.library import System, User, ChainOfThought
+#     class Expert(System):
+#         content: str = (
+#             "Hello my friend. I will guide you to Vietnam"
+#         )
+#
+#     calls = [Expert(), User("I will go to Vietnam. Help me")]
+#     res = await llm.run((calls | ChainOfThought()).render(), stream_handler=lambda x: print(x.content))
+#
+#     print(res)
+#
+# import asyncio
+#
+# if __name__ == '__main__':
+#     asyncio.run(main())

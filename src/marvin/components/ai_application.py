@@ -6,7 +6,7 @@ from jsonpatch import JsonPatch
 
 import marvin
 from marvin._compat import PYDANTIC_V2, BaseModel, Field, field_validator, model_dump
-from marvin.core.ChatCompletion.providers.openai import get_context_size
+from marvin.core.ChatCompletion.providers import get_context_size
 from marvin.openai import ChatCompletion
 from marvin.prompts import library as prompt_library
 from marvin.prompts.base import Prompt, render_prompts

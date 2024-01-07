@@ -55,7 +55,7 @@ class Message(MarvinBaseModel):
         default_factory=utcnow,
         exclude=True,
     )
-    llm_response: Any = Field(default=None, description="LLM response")
+    llm_response: Any = Field(default=None, description="LLM response", exclude=True)
 
     @field_validator("content")
     def clean_content(cls, v: Optional[str]) -> Optional[str]:
