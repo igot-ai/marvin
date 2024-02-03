@@ -42,7 +42,7 @@ class OpenAIStreamHandler(StreamHandler):
         Accumulate chunk deltas into a full response. Returns the full message.
         Passes partial messages to the callback, if provided.
         """
-        response = {"role": None, "content": "", "data": {}, "llm_response": None}
+        response = {"role": Role.ASSISTANT.value, "content": "", "data": {}, "llm_response": None}
 
         async for r in api_response:
             response["llm_response"] = r.dict()
